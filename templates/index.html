@@ -51,6 +51,13 @@
       font-size: 1.15rem;
       color: #111827;
     }
+    .table-scroll {
+      overflow-x: auto;
+    }
+    .table-scroll:focus-visible {
+      outline: 2px solid #0369a1;
+      outline-offset: 2px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -116,7 +123,8 @@
     </section>
 
     <section class="card">
-      <h2>Merged Orders Table</h2>
+      <h2 id="orders-heading">Merged Orders Table</h2>
+      <div class="table-scroll" role="region" aria-labelledby="orders-heading" tabindex="0">
       <table>
         <thead>
           <tr>
@@ -143,6 +151,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </section>
   </div>
 
