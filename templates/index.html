@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIS2001 Order Analytics Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+      margin: 0;
+      padding: 32px 20px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.65rem;
+      color: #111827;
+    }
+    .meta {
+      font-size: 0.9rem;
+      color: #4b5563;
+      background: #ffffff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e5e7eb;
+    }
+    h2 {
+      margin: 0 0 14px 0;
+      font-size: 1.15rem;
+      color: #111827;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+    }
+    tbody tr:hover {
+      background: #f9fafb;
+    }
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>MIS2001 Orders &amp; Regional Summary</h1>
+      <div class="meta">
+        DB Last Updated: <strong id="updated-at">{{ updated_at }}</strong> · Auto-refreshes every 5s
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Summary: Average Amount (CNY) by Region</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th class="num">Order Count</th>
+            <th class="num">Average Amount (CNY)</th>
+          </tr>
+        </thead>
+        <tbody id="summary-body">
+          {% for row in summary %}
+          <tr>
+            <td><strong>{{ row.region }}</strong></td>
+            <td class="num">{{ row.order_count }}</td>
+            <td class="num">{{ "%.2f"|format(row.avg_amount_cny) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Merged Orders Table</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer ID</th>
+            <th>Customer Name</th>
+            <th>Region</th>
+            <th class="num">Original Amount</th>
+            <th>Currency</th>
+            <th class="num">Amount (CNY)</th>
+          </tr>
+        </thead>
+        <tbody id="orders-body">
+          {% for row in orders %}
+          <tr>
+            <td>{{ row.order_id }}</td>
+            <td>{{ row.customer_id }}</td>
+            <td>{{ row.customer_name }}</td>
+            <td>{{ row.region }}</td>
+            <td class="num">{{ "%.2f"|format(row.amount) }}</td>
+            <td><span class="badge">{{ row.currency }}</span></td>
+            <td class="num"><strong>{{ "%.2f"|format(row.amount_cny) }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    async function refreshData() {
+      try {
+        const res = await fetch("/api/data", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        document.getElementById("updated-at").textContent = data.updated_at;
+
+        const summaryBody = document.getElementById("summary-body");
+        summaryBody.innerHTML = data.summary.map(row => `
+          <tr>
+            <td><strong>${row.region}</strong></td>
+            <td class="num">${row.order_count}</td>
+            <td class="num">${Number(row.avg_amount_cny).toFixed(2)}</td>
+          </tr>
+        `).join("");
+
+        const ordersBody = document.getElementById("orders-body");
+        ordersBody.innerHTML = data.orders.map(row => `
+          <tr>
+            <td>${row.order_id}</td>
+            <td>${row.customer_id}</td>
+            <td>${row.customer_name}</td>
+            <td>${row.region}</td>
+            <td class="num">${Number(row.amount).toFixed(2)}</td>
+            <td><span class="badge">${row.currency}</span></td>
+            <td class="num"><strong>${Number(row.amount_cny).toFixed(2)}</strong></td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error("Failed to refresh dashboard data:", err);
+      }
+    }
+
+    setInterval(refreshData, 5000);
+  </script>
+</body>
+</html>
