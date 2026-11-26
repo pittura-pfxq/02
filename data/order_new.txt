@@ -1,0 +1,3 @@
+order_id,customer_id,amount,currency
+O1006,C002,200,USD
+O1007,C003,100,EUR
